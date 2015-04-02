@@ -1,0 +1,43 @@
+{
+  "variables": {
+  "aws_access_key": "{{env `aws_access_key`}}",
+  "aws_secret_key": "{{ env `aws_secret_key` }}",
+  "aws_vpc_id": "{{ env `aws_vpc_id` }}",
+  "subnet_id": "{{ env `subnet_id` }}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{ user `aws_access_key` }}",
+    "secret_key": "{{ user `aws_secret_key` }}",
+    "region": "us-west-2",
+    "source_ami": "ami-fc9cf1cc",
+    "instance_type": "t2.micro",
+    "ssh_username": "ubuntu",
+    "ami_name": "Ubuntu-12.04LTS-HVM",
+    "enhanced_networking": "True",
+    "associate_public_ip_address": "True",
+    "vpc_id": "{{ user `aws_vpc_id` }}",
+    "subnet_id": "{{ user `subnet_id` }}",
+    "ami_description": "Base Template - Ubuntu 12.04 LTS HVM",
+    "ami_regions": ["us-east-1", "us-west-1", "us-west-2"],
+    "tags": {
+      "Product": "Infra",
+      "Name": "Packer",
+      "Created": "{{ timestamp }}"
+    }
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sudo aptitude update",
+      "sudo aptitude -fry install python-pip",
+      "sudo pip install ansible==1.4.4"
+    ]
+  }, {
+    "type": "ansible-local",
+    "playbook_dir": "ansible-provision",
+    "playbook_file": "ansible-provision/bootstrap.yml",
+    "inventory_file": "ansible-provision/hosts",
+    "extra_arguments": []
+  }]
+}

@@ -1,0 +1,37 @@
+---
+- name: dump all vars
+  template: src=dumpall.j2 dest=/tmp/ansible.all
+
+- name: upgrade machine
+  apt: update_cache=yes upgrade=yes
+
+- name: install python-pycurl
+  apt: pkg=python-pycurl state=installed
+
+- name: ubuntu install software-properties-common
+  apt: pkg=software-properties-common install_recommends=yes
+
+- name: ensure ntp is installed
+  apt: pkg=ntp state=installed
+
+- name: ensure ntp is enabled
+  service: name=ntp state=started enabled=yes
+
+- name: install troubleshooting tools
+  apt: name={{item}} state=latest
+  with_items:
+  - 'sysstat'
+  - 'htop'
+  - 'nmon'
+  - 'atop'
+  - 'ngrep'
+  - 'lsof'
+  - 'dstat'
+
+- name: install unattended-upgrades package
+  apt: pkg=unattended-upgrades state=installed
+
+- name: enable auto security updates
+  copy: src=10periodic dest=/etc/apt/apt.conf.d/
+
+- include: sysctl.yml

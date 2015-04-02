@@ -1,0 +1,7 @@
+---
+  - name: bootstrap
+    hosts: localhost
+    connection: local
+    sudo: yes
+    user: ubuntu
+    roles: 'bootstrap'
