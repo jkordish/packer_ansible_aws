@@ -1,0 +1,30 @@
+# consul
+
+description "consul - service discovery"
+
+start on (started networking)
+stop on (stopping networking)
+
+console log
+
+limit nofile 65535 65535
+
+respawn
+respawn limit 5 30
+
+setuid consul
+setgid consul
+
+env GOMAXPROCS=2
+
+script
+  exec /usr/local/bin/consul agent                         \
+        -client `ec2metadata  --local-ipv4`                \
+        -config-dir /etc/consul.d                          \
+        -data-dir /var/consul                              \
+        -dc `hostname | cut -d- -f1`                       \
+        -node `hostname`                                   \
+        -pid-file /var/consul/run/consul.pid               \
+        -join `ec2metadata --local-ipv4 | cut -d. -f1-3`.5 \
+        -syslog
+end script

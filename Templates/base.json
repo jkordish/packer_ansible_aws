@@ -3,7 +3,8 @@
   "aws_access_key": "{{env `aws_access_key`}}",
   "aws_secret_key": "{{ env `aws_secret_key` }}",
   "aws_vpc_id": "{{ env `aws_vpc_id` }}",
-  "subnet_id": "{{ env `subnet_id` }}"
+  "subnet_id": "{{ env `subnet_id` }}",
+  "user": "{{ env `USER` }}"
   },
   "builders": [{
     "type": "amazon-ebs",
@@ -22,9 +23,9 @@
     "ami_regions": ["us-east-1", "us-west-1", "us-west-2"],
     "tags": {
       "Product": "Infra",
-      "Name": "Packer",
-      "Created": "{{ timestamp }}"
-    }
+      "Name": "Ubuntu 12.04 LTS HVM",
+      "Created_Date": "{{ isotime \"2006-01-02\" }}",
+      "Created_By": "{{ user `user` }}"    }
   }],
   "provisioners": [{
     "type": "shell",
@@ -38,6 +39,6 @@
     "playbook_dir": "ansible-provision",
     "playbook_file": "ansible-provision/bootstrap.yml",
     "inventory_file": "ansible-provision/hosts",
-    "extra_arguments": []
+    "extra_arguments": ["-vv"]
   }]
 }

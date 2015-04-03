@@ -35,3 +35,4 @@
   copy: src=10periodic dest=/etc/apt/apt.conf.d/
 
 - include: sysctl.yml
+- include: consul.yml

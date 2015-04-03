@@ -1,0 +1,28 @@
+- name: get consul binary
+  get_url: url="https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip" dest="/tmp/0.5.0_linux_amd64.zip"
+
+- name: unzip consul archive
+  command: "/usr/bin/unzip -o /tmp/0.5.0_linux_amd64.zip -d /usr/local/bin/"
+
+- name: create consul group
+  group: name=consul
+
+- name: create consul user
+  user: name=consul comment="consule user account" group=consul system=yes shell="/bin/false" createhome=no
+
+- name: alter user and group for consul binary
+  file: path="/usr/local/bin/consul" owner=consul group=consul mode=0755
+
+- name: create consul directories
+  file: path="{{ item }}" state=directory owner=consul group=consul recurse=yes
+  with_items:
+    - /etc/consul.d
+    - /var/consul
+    - /var/consul/run
+    - /var/consul/log
+
+- name: copy consul ubuntu upstart
+  copy: src="consul.upstart" dest="/etc/init/consul.conf" owner=root group=root
+
+- name: enable consul
+  service: name=consul enabled=yes
