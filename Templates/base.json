@@ -30,15 +30,15 @@
   "provisioners": [{
     "type": "shell",
     "inline": [
-      "sudo aptitude update",
+      "sudo apt-get -qq update",
       "sudo aptitude -fry install python-pip",
-      "sudo pip install ansible==1.4.4"
+      "sudo pip install -q ansible==1.4.4"
     ]
   }, {
     "type": "ansible-local",
     "playbook_dir": "ansible-provision",
     "playbook_file": "ansible-provision/bootstrap.yml",
     "inventory_file": "ansible-provision/hosts",
-    "extra_arguments": ["-vv"]
+    "extra_arguments": []
   }]
 }

@@ -18,6 +18,20 @@ setgid consul
 env GOMAXPROCS=2
 
 script
+
+  if [ -f "/usr/local/share/consul/server" ]; then
+  exec /usr/local/bin/consul agent                         \
+        -server                                            \
+        -bootstrap                                         \
+        -client `ec2metadata  --local-ipv4`                \
+        -config-dir /etc/consul.d                          \
+        -data-dir /var/consul                              \
+        -dc `hostname | cut -d- -f1`                       \
+        -node `hostname`                                   \
+        -pid-file /var/consul/run/consul.pid               \
+        -ui-dir /usr/local/share/consul/webui              \
+        -syslog
+  else
   exec /usr/local/bin/consul agent                         \
         -client `ec2metadata  --local-ipv4`                \
         -config-dir /etc/consul.d                          \
@@ -27,4 +41,5 @@ script
         -pid-file /var/consul/run/consul.pid               \
         -join `ec2metadata --local-ipv4 | cut -d. -f1-3`.5 \
         -syslog
+  fi
 end script
