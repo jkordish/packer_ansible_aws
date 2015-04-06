@@ -1,0 +1,30 @@
+# via https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking.html
+- name: install dkms
+  apt: name=dkms state=latest
+
+- name: get ixgbevf
+  get_url: url="http://sourceforge.net/projects/e1000/files/ixgbevf%20stable/2.16.1/ixgbevf-2.16.1.tar.gz/download" dest="/tmp/ixgbevf-2.16.1.tar.gz"
+
+- name: create /usr/src/ixgbevf directory
+  file: state=directory path=/usr/src/ixgbevf-2.16.1 recurse=yes
+
+- name: decompress ixgbevf
+  command: "tar -xzf /tmp/ixgbevf-2.16.1.tar.gz --strip-components=1 -C /usr/src/ixgbevf-2.16.1"
+
+- name: copy dkms file
+  copy: src=ixgbevf.dkms.conf dest=/usr/src/ixgbevf-2.16.1/dkms.conf
+
+- name: add ixgbevf module
+  command: "dkms add -m ixgbevf -v 2.16.1"
+
+- name: build ixgbevf module
+  command: "dkms build -m ixgbevf -v 2.16.1"
+
+- name: install ixgbevf module
+  command: "dkms install -m ixgbevf -v 2.16.1"
+
+- name: rebuild initramfs
+  command: "update-initramfs -c -k all"
+
+# note: this takes care of the AMI side. You still have to turn it on in the VPC
+# aws ec2 modify-instance-attribute --instance-id instance_id --sriov-net-support simple
