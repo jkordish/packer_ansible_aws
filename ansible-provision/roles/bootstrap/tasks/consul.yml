@@ -31,7 +31,7 @@
     - /var/consul/log
 
 - name: copy consul ubuntu upstart
-  copy: src="consul.upstart" dest="/etc/init/consul.conf" owner=root group=root
+  copy: src="consul.upstart" dest="/etc/init/consul.conf" owner=root group=root mode=0644
 
 - name: enable consul
   service: name=consul enabled=yes

@@ -30,7 +30,7 @@
   "provisioners": [{
     "type": "shell",
     "inline": [
-      "sudo apt-get -qq update",
+      "sudo aptitude update",
       "sudo aptitude -fry install python-pip",
       "sudo pip install -q ansible==1.4.4"
     ]
