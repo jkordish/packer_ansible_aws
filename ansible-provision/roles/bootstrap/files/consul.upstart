@@ -10,7 +10,6 @@ console log
 limit nofile 65535 65535
 
 respawn
-respawn limit 5 30
 
 setuid consul
 setgid consul
@@ -18,29 +17,40 @@ setgid consul
 env GOMAXPROCS=2
 
 script
+  set -e
 
-  if [ -f "/usr/local/share/consul/server" ]; then
-  exec /usr/local/bin/consul agent                               \
-        -server                                                  \
-        -bootstrap                                               \
-        -client `ec2metadata  --local-ipv4`                      \
-        -config-dir /etc/consul.d                                \
-        -data-dir /var/consul                                    \
-        -dc `hostname | cut -d- -f1`                             \
-        -node `hostname`                                         \
-        -pid-file /var/consul/run/consul.pid                     \
-        -ui-dir /usr/local/share/consul/webui                    \
-        -syslog
-  else
-  exec /usr/local/bin/consul agent                               \
-        -client `ec2metadata  --local-ipv4`                      \
-        -config-dir /etc/consul.d                                \
-        -data-dir /var/consul                                    \
-        -dc `hostname | cut -d- -f1`                             \
-        -node `hostname`                                         \
-        -pid-file /var/consul/run/consul.pid                     \
-        -retry-join `ec2metadata --local-ipv4 | cut -d. -f1-3`.5 \
-        -syslog
-  fi
+  while [ "$(hostname | cut -d- -f1)" = "ip" ]; do echo "waiting..." && sleep 5; done
+  case "$(hostname)" in
+    *consul0*)
+    echo "starting consul as server"
+    exec /usr/local/bin/consul agent                                \
+          -server                                                   \
+          -bootstrap-expect 1                                       \
+          -client 0.0.0.0                                           \
+          -config-dir /etc/consul.d                                 \
+          -data-dir /var/consul                                     \
+          -dc `hostname | cut -d- -f1`                              \
+          -node `hostname`                                          \
+          -pid-file /var/consul/run/consul.pid                      \
+          -ui-dir /usr/local/share/consul/webui
+
+    if [ -d "/tmp/consul" ]; then
+      cat /tmp/consul/*.json /usr/local/bin/consulate kv restore
+    fi
+    ;;
+    *)
+      echo "starting consul as agent"
+      exec /usr/local/bin/consul agent                              \
+            -client 0.0.0.0                                         \
+            -config-dir /etc/consul.d                               \
+            -data-dir /var/consul                                   \
+            -dc `hostname | cut -d- -f1`                            \
+            -node `ec2metadata --instance-id`                       \
+            -pid-file /var/consul/run/consul.pid                    \
+            -retry-join `hostname | cut -d- -f1`-consul01
+      break
+      ;;
+    esac
 end script
 
+pre-stop exec consul leave

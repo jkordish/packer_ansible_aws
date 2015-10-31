@@ -1,37 +1,67 @@
+---
+- name: install unzip
+  apt: name=unzip install_recommends=yes update_cache=yes
+
 - name: create consul group
   group: name=consul
 
 - name: create consul user
   user: name=consul comment="consule user account" group=consul system=yes shell="/bin/false" createhome=no
 
-- name: create /usr/local/share/consul directory
-  file: path="/usr/local/share/consul" owner=consul group=consul state=directory
-
-- name: get consul archive
-  get_url: url="https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip" dest="/tmp/0.5.0_linux_amd64.zip"
-
-- name: unzip consul archive
-  command: "/usr/bin/unzip -j /tmp/0.5.0_linux_amd64.zip -d /usr/local/bin/"
-
-- name: get consul webui
-  get_url: url="https://dl.bintray.com/mitchellh/consul/0.5.0_web_ui.zip" dest="/tmp/0.5.0_web_ui.zip"
-
-- name: unzip consul webui archive
-  command: "/usr/bin/unzip -j /tmp/0.5.0_web_ui.zip dist/* -x '*/.git*' -d /usr/local/share/consul/webui"
-
-- name: alter user and group for consul binary
-  file: path="/usr/local/bin/consul" owner=consul group=consul mode=0755
-
 - name: create consul directories
   file: path="{{ item }}" state=directory owner=consul group=consul recurse=yes
   with_items:
-    - /etc/consul.d
-    - /var/consul
-    - /var/consul/run
-    - /var/consul/log
+    - /etc/consul.d/
+    - /var/consul/
+    - /var/consul/run/
+    - /var/consul/log/
+    - /usr/local/share/consul/webui/
 
-- name: copy consul ubuntu upstart
-  copy: src="consul.upstart" dest="/etc/init/consul.conf" owner=root group=root mode=0644
+- name: pip install
+  environment: "{{ proxy_env }}"
+  pip: name=consulate
 
-- name: enable consul
-  service: name=consul enabled=yes
+- name: get consul archive
+  environment: "{{ proxy_env }}"
+  get_url: url="https://releases.hashicorp.com/consul/{{ consul.version.agent }}/consul_{{ consul.version.agent }}_linux_amd64.zip" dest="/tmp"
+
+- name: unzip consul archive
+  unarchive: copy=no owner=consul group=consul mode=0755 src=/tmp/consul_{{ consul.version.agent }}_linux_amd64.zip dest=/usr/local/bin/
+
+- name: get consul webui
+  environment: "{{ proxy_env }}"
+  get_url: url="https://releases.hashicorp.com/consul/{{ consul.version.agent }}/consul_{{ consul.version.agent }}_web_ui.zip" dest="/tmp"
+
+- name: unzip consul webui archive
+  unarchive: copy=no owner=consul group=consul src=/tmp/consul_{{ consul.version.agent }}_web_ui.zip dest=/tmp
+
+- name: move webui dist
+  synchronize: mode=pull delete=yes src=/tmp/dist/ dest=/usr/local/share/consul/webui/
+  delegate_to: "{{inventory_hostname}}"
+
+- name: get consul-replicate
+  environment: "{{ proxy_env }}"
+  get_url: url="https://releases.hashicorp.com/consul-replicate/{{ consul.version.replicate }}/consul-replicate_{{ consul.version.replicate }}_linux_amd64.zip" dest="/tmp/consul-replicate_{{ consul.version.replicate }}_linux_amd64.zip"
+
+- name: decompress consul-replicate
+  unarchive: copy=no owner=consul group=consul mode=0755 src=/tmp/consul-replicate_{{ consul.version.replicate }}_linux_amd64.zip dest=/usr/local/bin/
+
+- name: get consul-template
+  environment: "{{ proxy_env }}"
+  get_url: url="https://releases.hashicorp.com/consul-template/{{ consul.version.template }}/consul-template_{{ consul.version.template }}_linux_amd64.zip" dest="/tmp/consul-template_{{ consul.version.template }}_linux_amd64.zip"
+
+- name: decompress consul-template
+  unarchive: copy=no owner=consul group=consul mode=0755 src=/tmp/consul-template_{{ consul.version.template }}_linux_amd64.zip dest=/usr/local/bin/
+
+- name: get envconsul
+  environment: "{{ proxy_env }}"
+  get_url: url="https://releases.hashicorp.com/envconsul/{{ consul.version.envconsul }}/envconsul_{{ consul.version.envconsul }}_linux_amd64.zip" dest="/tmp/envconsul_{{ consul.version.envconsul }}_linux_amd64.zip"
+
+- name: decompress envconsul
+  unarchive: copy=no owner=consul group=consul mode=0755 src=/tmp/envconsul_{{ consul.version.envconsul }}_linux_amd64.zip dest=/usr/local/bin/
+
+- name: fix permissions
+  file: recurse=yes state=directory owner=consul group=consul path=/usr/local/share/consul
+
+- name: consul ubuntu upstart file
+  copy: src=consul.upstart dest=/etc/init/consul.conf owner=root group=root mode=0644 force=yes

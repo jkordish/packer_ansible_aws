@@ -3,27 +3,37 @@
   apt: name=dkms state=latest
 
 - name: get ixgbevf
-  get_url: url="http://sourceforge.net/projects/e1000/files/ixgbevf%20stable/2.16.1/ixgbevf-2.16.1.tar.gz/download" dest="/tmp/ixgbevf-2.16.1.tar.gz"
+  environment: "{{ proxy_env }}"
+  when: proxy_env is defined
+  get_url: force=yes url="http://downloadmirror.intel.com/18700/eng/ixgbevf-2.16.4.tar.gz" dest="/tmp/ixgbevf-2.16.4.tar.gz"
+  retries: 5
+  delay: 10
 
 - name: create /usr/src/ixgbevf directory
-  file: state=directory path=/usr/src/ixgbevf-2.16.1 recurse=yes
+  file: state=directory path=/usr/src/ixgbevf-2.16.4 recurse=yes
 
 - name: decompress ixgbevf
-  command: "tar -xzf /tmp/ixgbevf-2.16.1.tar.gz --strip-components=1 -C /usr/src/ixgbevf-2.16.1"
+  command: "tar -xzf /tmp/ixgbevf-2.16.4.tar.gz --strip-components=1 -C /usr/src/ixgbevf-2.16.4"
 
 - name: copy dkms file
-  copy: src=ixgbevf.dkms.conf dest=/usr/src/ixgbevf-2.16.1/dkms.conf
+  copy: src=ixgbevf.dkms.conf dest=/usr/src/ixgbevf-2.16.4/dkms.conf
 
 - name: add ixgbevf module
-  command: "dkms add -m ixgbevf -v 2.16.1"
+  command: "dkms add -m ixgbevf -v 2.16.4"
+  changed_when: '"DKMS tree already contains" not in ixgbevf_module.stderr'
+  register: ixgbevf_module
+  failed_when: false
 
 - name: build ixgbevf module
-  command: "dkms build -m ixgbevf -v 2.16.1"
+  when: ixgbevf_module.changed
+  command: "dkms build -m ixgbevf -v 2.16.4"
 
 - name: install ixgbevf module
-  command: "dkms install -m ixgbevf -v 2.16.1"
+  when: ixgbevf_module.changed
+  command: "dkms install -m ixgbevf -v 2.16.4"
 
 - name: rebuild initramfs
+  when: ixgbevf_module.changed
   command: "update-initramfs -c -k all"
 
 # note: this takes care of the AMI side. You still have to turn it on in the VPC
