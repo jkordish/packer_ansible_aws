@@ -7,7 +7,7 @@ Put this together as I didn't really find great examples for doing exactly what 
 
 1. cp aws-creds-example.json aws-creds.json
   * replace values in aws-creds.json
-1. packer build -var-file=aws-creds.json Templates/base.json
+1. packer build -var-file=aws-creds.json templates/base.json
 1. profit
 
 **note:** you may need to remove the subnet_id and the aws_vpc_id

@@ -1,0 +1,265 @@
+---
+- name: gather facts
+  action: ec2_facts
+
+- name: create teamcity group
+  group: name=teamcity
+
+- name: create teamcity user
+  user: name=teamcity comment=TeamCity group=teamcity createhome=yes system=yes shell=/bin/bash
+
+- name: authorize teamcity
+  authorized_key: user='teamcity' key='{{teamcity.pub_key}}'
+
+- name: add mandiant github to hosts
+  when: github.ip and github.host is defined
+  lineinfile: dest=/etc/hosts line='{{github.ip}} {{github.host}}' owner=root group=root mode=0644
+
+- name: add nexus mandiant github to hosts
+  when: nexus.ip and nexus.host is defined
+  lineinfile: dest=/etc/hosts line='{{nexus.ip}} {{nexus.host}}' owner=root group=root mode=0644
+
+### buildAgent
+# downloading and starting up during packer'izing
+# this ensures we connect and grab all the plugins
+# makes the subsequent provisioning much faster
+- name: download buildAgent
+  sudo_user: teamcity
+  get_url: url='http://{{teamcity.local_ip}}:8111/update/buildAgent.zip?guest=1' dest=/home/teamcity/buildAgent.zip
+
+- name: create buildAgent directory
+  sudo_user: teamcity
+  file: state=directory dest=/home/teamcity/buildAgent
+
+- name: unarchive buildAgent
+  sudo_user: teamcity
+  unarchive: copy=no src=/home/teamcity/buildAgent.zip dest=/home/teamcity/buildAgent/
+
+- name: chmod agent.sh
+  sudo_user: teamcity
+  file: state=touch dest=/home/teamcity/buildAgent/bin/agent.sh mode=0755
+
+- name: modify buildAgent.properties
+  sudo_user: teamcity
+  lineinfile: create=yes dest=/home/teamcity/buildAgent/conf/buildAgent.properties line="{{item}}"
+  with_items:
+    - serverUrl=http://{{teamcity.local_ip}}:8111
+    - name=packer
+
+- name: start up teamcity agent
+  sudo_user: teamcity
+  command: chdir=/home/teamcity/buildAgent/bin/ ./agent.sh start
+
+- name: copy buildagent upstart
+  copy: src=teamcity.agent.upstart dest=/etc/init/teamcity-buildagent.conf
+### END buildAgent
+
+- name: add ubuntu-test toolchain
+  apt_repository: repo='ppa:ubuntu-toolchain-r/test'
+
+- name: git repo
+  apt_repository: repo='ppa:git-core/ppa'
+
+- name: add boost repo
+  apt_repository: repo='ppa:boost-latest/ppa'
+
+- name: ubuntu install packages
+  apt: state=latest install_recommends=yes force=yes pkg='{{item}}'
+  with_items:
+  - 'build-essential'
+  - 'ca-certificates'
+  - 'ragel'
+  - 'unzip'
+  - 'zip'
+  - 'g++-4.8'
+  - 'git'
+  - 'wget'
+  - 'libboost1.54-all-dev'
+  - 'autoconf'
+  - 'libtool'
+  - 'zlib1g-dev'
+  - 'libssl-dev'
+  - 'libreadline-dev'
+  - 'libyaml-dev'
+  - 'libcurl4-openssl-dev'
+  - 'curl'
+  - 'git-core'
+  - 'python-software-properties'
+  - 'libqt4-dev'
+  - 'redis-server'
+  - 'libmysql-ruby'
+  - 'xvfb'
+  - 'automake'
+  - 'subversion'
+  - 'ruby1.9.3'
+  - 'debhelper'
+  - 'dpkg-dev'
+  - 'po-debconf'
+  - 'dpatch'
+  - 'bison'
+  - 'binutils'
+  - 'flex'
+  - 'autotools-dev'
+  - 'libltdl-dev'
+  - 'pkg-config'
+  - 'iproute-dev'
+  - 'iptables-dev'
+  - 'javahelper'
+  - 'libdbi-dev'
+  - 'libesmtp-dev'
+  - 'libganglia1-dev'
+  - 'libgcrypt11-dev'
+  - 'libglib2.0-dev'
+  - 'libhal-dev'
+  - 'libnotify-dev'
+  - 'liboping-dev'
+  - 'libpcap0.8-dev'
+  - 'libperl-dev'
+  - 'libpq-dev'
+  - 'libprotobuf-c0-dev'
+  - 'librrd-dev'
+  - 'libsensors4-dev'
+  - 'libsnmp-dev'
+  - 'libsnmp-dev'
+  - 'libxml2-dev'
+  - 'libxslt1-dev'
+  - 'libyajl-dev'
+  - 'linux-libc-dev'
+  - 'protobuf-c-compiler'
+  - 'python-dev'
+  - 'python-all-dev'
+  - 'python-virtualenv'
+  - 'libamd2.2.0'
+  - 'libc6'
+  - 'libgcc1'
+  - 'libgfortran3'
+  - 'libumfpack5.4.0'
+  - 'libstdc++6'
+  - 'gfortran'
+  - 'libatlas-base-dev'
+  - 'libblas3gf'
+  - 'libblas-dev'
+  - 'liblapack3gf'
+  - 'zlib1g-dev'
+  - 'libpcre3'
+  - 'libpcre3-dev'
+  - 'libbz2-dev'
+  - 'libgeoip-dev'
+  - 'libssl-dev'
+  - 'tar'
+  - 'unzip'
+  - 'ant'
+  - 'ant-contrib'
+  - 'curl'
+  - 's3cmd'
+  - 'xsltproc'
+  - 'docbook-xsl'
+  - 'libjson0-dev'
+  - 'openjdk-7-jre-headless'
+  - 'openjdk-7-jdk'
+  - 'python-magic'
+  - 'maven'
+  - 'libmysqlclient-dev'
+  - 'maven-ant-helper'
+  - 'libffi-dev'
+  - 'librpmbuild2'
+  - 'rpm'
+  - 'libnet1-dev'
+  - 'mercurial'
+  - 'libapt-pkg-dev'
+  - 'libsnappy1'
+  - 'libsnappy-dev'
+  - 'libapr1-dev'
+  - 'libsvn-dev'
+  - 'libsasl2-dev'
+  - 'libevtlog-dev'
+  - 'gnupg2'
+  - 'check'
+  - 'libjansson-dev'
+  - 'libjansson4'
+  - 'libjudy-dev'
+  - 'libjudydebian1'
+  - 'libmsgpack-dev'
+  # mint needs this for a gem.
+  - 'libmagic-dev'
+
+- name: remove java 6
+  apt: name="{{item}}" state=absent force=yes
+  with_items:
+    - openjdk-6-jre
+    - openjdk-6-jre-headless
+    - openjdk-6-jre-lib
+
+- name: teamcity sudoers file
+  lineinfile: 'create=yes dest=/etc/sudoers.d/teamcity line="teamcity ALL=NOPASSWD: /usr/bin/apt-get, /usr/bin/env" mode=0440 owner=root group=root'
+
+### profile
+- name: fix profile
+  sudo_user: teamcity
+  lineinfile: insertafter=EOF dest=/home/teamcity/.profile line='[[ -s "/etc/profile.d/teamcity" ]] && . /etc/profile.d/teamcity'
+
+- name: fix profile
+  lineinfile: insertafter=EOF dest=/etc/profile line='[[ -s "/etc/profile.d/teamcity" ]] && . /etc/profile.d/teamcity'
+### end profile
+
+- name: set git config
+  template: src=gitconfig.j2 dest=/etc/gitconfig
+
+- name: git credentials
+  sudo_user: teamcity
+  copy: src=git-credentials dest=~teamcity/.git-credentials
+
+- name: boto cfg
+  template: src=boto.cfg.j2 dest=/etc/boto.cfg
+
+- name: update certificates
+  command: "update-ca-certificates -f"
+
+- name: remove /usr/local/bin/user-data.sh
+  lineinfile: dest=/etc/rc.local line=/usr/local/bin/user-data.sh state=absent
+
+- name: update build-chain alternatives
+  shell: update-alternatives {{item}}
+  with_items:
+    - "--install /usr/bin/gcc gcc /usr/bin/gcc-4.6 10"
+    - "--install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20"
+    - "--install /usr/bin/g++ g++ /usr/bin/g++-4.6 10"
+    - "--install /usr/bin/g++ g++ /usr/bin/g++-4.8 20"
+    - "--install /usr/bin/cc cc /usr/bin/gcc 30"
+    - "--set cc /usr/bin/gcc"
+    - "--install /usr/bin/c++ c++ /usr/bin/g++ 30"
+    - "--set c++ /usr/bin/g++"
+
+- name: stop build agent
+  sudo_user: teamcity
+  command: chdir=/home/teamcity/buildAgent/bin/ ./agent.sh stop force
+
+- name: remove build agent properties
+  sudo_user: teamcity
+  file: state=absent dest=/home/teamcity/buildAgent/conf/buildAgent.properties
+
+- name: copy teamcity_install.yml
+  sudo_user: teamcity
+  copy: src=teamcity_install.yml dest=/home/teamcity/teamcity_install.yml
+
+- name: apt proxy
+  action: template src=apt_proxy.j2 dest=/etc/apt/apt.conf.d/05proxy owner=root group=root mode=0644
+
+- inclue: postgres.yml
+  when: postgres is defined and postgres == "true"
+- inclue: mongodb.yml
+  when: when mongodb is defined and mongodb == "true"
+- inclue: docker.yml
+  when: when docker is defined and docker == "true"
+- inclue: maven.yml
+  when: when maven is defined and maven == "true"
+- inclue: sbt.yml
+  when: when sbt is defined and sbt == "true"
+- inclue: rvm.yml
+  when: when rvm is defined and rvm == "true"
+- inclue: nvm.yml
+  when: when nvm is defined and nvm == "true"
+- inclue: gvm.yml
+  when: when gvm is defined and gvm == "true"
+- inclue: rvm.yml
+  when: when rvm is defined and rvm == "true"

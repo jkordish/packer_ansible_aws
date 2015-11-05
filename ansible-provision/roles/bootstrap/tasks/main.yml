@@ -2,8 +2,30 @@
 - name: dump all vars
   template: src=dumpall.j2 dest=/tmp/ansible.all
 
+- name: ansible hosts
+  lineinfile: line="localhost ansible_connection=local" dest=/etc/ansible/hosts create=yes mode=0666
+
+- name: ansible cfg
+  copy: src=ansible.cfg dest=/etc/ansible/ansible.cfg mode=0644
+
+- name: remove multiarch support
+  file: path=/etc/dpkg/dpkg.cfg.d/multiarch state=absent
+
+- name: update sources
+  command: "apt-add-repository -y '{{ item }}'"
+  with_items:
+    - "deb http://us.archive.ubuntu.com/ubuntu/ {{ansible_lsb.codename}} main restricted universe multiverse"
+    - "deb http://us.archive.ubuntu.com/ubuntu/ {{ansible_lsb.codename}}-backports main restricted universe multiverse"
+    - "deb http://security.ubuntu.com/ubuntu {{ansible_lsb.codename}}-security main restricted multiverse"
+    - "deb http://archive.canonical.com/ubuntu {{ansible_lsb.codename}} partner"
+    - "deb http://security.ubuntu.com/ubuntu {{ansible_lsb.codename}}-security main restricted universe multiverse"
+
+
 - name: upgrade machine
   apt: update_cache=yes upgrade=yes
+
+- name: apt cleanup
+  shell: "apt-get purge && apt-get -qy autoremove"
 
 - name: install python-pycurl
   apt: pkg=python-pycurl state=installed
@@ -17,16 +39,43 @@
 - name: ensure ntp is enabled
   service: name=ntp state=started enabled=yes
 
-- name: install troubleshooting tools
-  apt: name={{item}} state=latest
+- name: install base packages
+  apt: name=syslog-ng-core install_recommends=yes
+  when: ansible_lsb.codename == "trusty"
+
+- name: install base packages
+  apt: name={{item}} install_recommends=yes
   with_items:
-  - 'sysstat'
-  - 'htop'
-  - 'nmon'
-  - 'atop'
-  - 'ngrep'
-  - 'lsof'
-  - 'dstat'
+    - python-pycurl
+    - python-pip
+    - software-properties-common
+    - ntp
+    - snmpd
+    - syslog-ng
+    - jq
+    - git
+    - ec2-api-tools
+
+- name: pip install
+  pip: name="{{item}}" extra_args="-U"
+  with_items:
+    - setuptools
+    - pip
+    - awscli
+    - boto==2.26.1
+
+- name: install troubleshooting tools
+  apt: name={{item}} install_recommends=yes
+  with_items:
+    - sysstat
+    - htop
+    - nmon
+    - atop
+    - ngrep
+    - lsof
+    - dstat
+    - unzip
+    - iptraf
 
 - name: install unattended-upgrades package
   apt: pkg=unattended-upgrades state=installed
@@ -35,4 +84,5 @@
   copy: src=10periodic dest=/etc/apt/apt.conf.d/
 
 - include: sysctl.yml
+- include: enhanced_networking.yml
 - include: consul.yml

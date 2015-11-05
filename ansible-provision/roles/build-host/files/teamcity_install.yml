@@ -1,0 +1,48 @@
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+  - name: ec2 facts
+    action: ec2_facts
+  - name: set hostname
+    hostname: name={{ansible_ec2_instance_id}}
+  - name: add hostname to hosts.conf
+    lineinfile: dest=/etc/hosts regexp='^127\.0\.0\.1' line='127.0.0.1 {{ansible_ec2_instance_id}} localhost' owner=root group=root mode=0644
+  - name: tag instance
+    ec2_tag: resource={{ansible_ec2_instance_id}} region={{ansible_ec2_placement_region}} state=present
+    args:
+      tags:
+        Name: "{{ansible_ec2_instance_id}}"
+        cust-id: devops
+        designation: operations
+        env: ops
+        mgmt: ops
+        product: infra
+        risk: high
+  - name: modify buildAgent.properties
+    sudo_user: teamcity
+    lineinfile: create=yes dest=/home/teamcity/buildAgent/conf/buildAgent.properties line="{{item}}"
+    with_items:
+      - env.PATH=/home/teamcity/node_modules/.bin:%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/bin:%teamcity.build.checkoutDir%/vendor/bin:%env.PATH%:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - env.PKG_CONFIG_PATH=%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/lib/pkgconfig:%teamcity.build.checkoutDir%/vendor/lib/pkgconfig
+      - env.C_INCLUDE_PATH=%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/include:%teamcity.build.checkoutDir%/vendor/include
+      - env.CFLAGS=-I%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/include -I%teamcity.build.checkoutDir%/dist/opt/%system.name%/ip2location/include -I%teamcity.build.checkoutDir%/vendor/include
+      - env.CXXFLAGS=-I%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/include -I%teamcity.build.checkoutDir%/dist/opt/%system.name%/ip2location/include -I%teamcity.build.checkoutDir%/vendor/include
+      - env.LD_LIBRARY_PATH=%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/lib:%teamcity.build.checkoutDir%/libmql/src/.libs:%teamcity.build.checkoutDir%/vendor/lib
+      - env.LIBRARY_PATH=%teamcity.build.checkoutDir%/vendor/lib:%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/lib
+      - env.LDFLAGS=-L%teamcity.build.checkoutDir%/dist/opt/%system.name%/vendor/lib -L%teamcity.build.checkoutDir%/vendor/lib
+      - env.LIBMQL_SRC=%teamcity.build.checkoutDir%/libmql
+      - env.VIRTUAL_ENV=%teamcity.build.checkoutDir%/dist/opt/%system.name%/venv
+      - env.JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+      - env.SBT_OPTS=%env.SBT_OPTS%
+      - env.GOPATH=%teamcity.build.checkoutDir%/dist/%system.name%
+      - env.GOBIN=%env.GOPATH%/bin
+      - env.http_proxy=%env.http_proxy%
+      - env.https_proxy=%env.https_proxy%
+      - env.no_proxy=%env.no_proxy%
+      - env.ftp_proxy=%env.http_proxy%
+  - name: chmod +x agent.sh
+    sudo_user: teamcity
+    file: dest=/home/teamcity/buildAgent/bin/agent.sh mode=0755 state=touch
+  - name: link /bin/bash to /bin/sh
+    command: "update-alternatives --install /bin/sh sh /bin/bash 0"

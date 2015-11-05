@@ -1,0 +1,13 @@
+### Docker
+- name: install docker
+  shell: "executable=/bin/bash curl -sSL https://get.docker.com/ | /bin/bash"
+
+- name: fix docker
+  lineinfile: dest=/etc/default/docker line="{{item}}"
+  with_items:
+    - export http_proxy={{proxy_env.http_proxy}}/
+    - export https_proxy={{proxy_env.http_proxy}}/
+
+- name: add teamcity to docker group
+  user: name=teamcity groups=docker append=yes
+### END Docker

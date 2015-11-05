@@ -1,0 +1,10 @@
+[credential]
+        helper = store
+[http]
+        proxy = http://{{proxy.host}}:{{proxy.port}}
+        sslverify = false
+[https]
+        proxy = http://{{proxy.host}}:{{proxy.port}}
+        sslverify = false
+[url "https://"]
+        insteadOf = git://

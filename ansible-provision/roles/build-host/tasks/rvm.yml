@@ -1,0 +1,53 @@
+### RVM
+- name: rvm gpg key
+  sudo_user: teamcity
+  command: "gpg --list-keys"
+  ignore_errors: yes
+
+- name: rvm gpg key
+  sudo_user: teamcity
+  command: "gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3"
+  ignore_errors: yes
+
+- name: get rvm installer
+  sudo_user: teamcity
+  get_url: "url=https://raw.githubusercontent.com/wayneeseguin/rvm/master/binscripts/rvm-installer dest=/home/teamcity/rvm_install.sh mode=0755"
+
+- name: install rvm
+  sudo_user: teamcity
+  shell: "executable=/bin/bash /home/teamcity/rvm_install.sh stable --autolibs=3 --auto-dotfiles"
+
+- name: install dependencies
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .rvm/scripts/rvm && rvm requirements"
+
+- name: autoload rvm
+  sudo_user: teamcity
+  lineinfile: dest=~/.rvmrc line="rvm_auto_reload_flag=2" create=yes
+
+- name: install ruby
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .rvm/scripts/rvm && rvm install --default {{ruby}}"
+
+- name: ensure 2.1.5 is current and default
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .rvm/scripts/rvm && rvm use default"
+
+- name: install gems
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .rvm/scripts/rvm && gem install {{item}} --no-ri --no-rdoc"
+  with_items:
+    - bundler
+    - passenger
+    - capistrano
+    - sass
+    - rake
+    - 'fpm -v 1.3.3'
+
+- name: add rvm to teamcity profile
+  sudo_user: teamcity
+  lineinfile: insertafter=EOF dest=/home/teamcity/.profile line='[[ -s "$HOME/.rvm/scripts/rvm" ]]  && . "$HOME/.rvm/scripts/rvm"'
+
+- name: add rvm to profile
+  lineinfile: insertafter=EOF dest=/etc/profile line='[[ -s "$HOME/.rvm/scripts/rvm" ]]  && . "$HOME/.rvm/scripts/rvm"'
+### END RVM

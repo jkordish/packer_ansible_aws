@@ -1,0 +1,63 @@
+### NVM
+- name: clone nvm
+  sudo_user: teamcity
+  git: repo=https://github.com/creationix/nvm.git dest=~/.nvm update=yes
+
+- name: install nodejs
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .nvm/nvm.sh && nvm install {{item}}"
+  with_items: nvm
+
+- name: make nodejs {{nvm[0]}} default
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .nvm/nvm.sh && nvm alias default {{nvm[0]}}"
+
+- name: create nvm etc directory
+  sudo_user: teamcity
+  file: state=directory path=/home/teamcity/.nvm/{{item}}/etc
+  with_items: nvm
+
+- name: copy npmrc into place
+  sudo_user: teamcity
+  template: src=npmrc.j2 dest=/home/teamcity/.npmrc mode=0644
+
+- name: link the npmrc
+  sudo_user: teamcity
+  file: src=/home/teamcity/.npmrc dest=/home/teamcity/.nvm/{{item}}/etc/npmrc state=link
+  with_items: nvm
+
+- name: npm modules
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .nvm/nvm.sh && npm install {{item}}"
+  with_items:
+    - 'npm@next'
+    - 'grunt'
+    - 'grunt-cli'
+    - 'istanbul'
+    - 'mocha'
+    - 'mocha-teamcity-reporter'
+    - 'mocha-sonar-reporter'
+    - 'grunt-qunit-sonar'
+    - 'bower'
+
+- name: npm modules
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .nvm/nvm.sh && npm install -g {{item}}"
+  with_items:
+    - 'npm@next'
+    - 'grunt'
+    - 'grunt-cli'
+    - 'istanbul'
+    - 'mocha'
+    - 'mocha-teamcity-reporter'
+    - 'mocha-sonar-reporter'
+    - 'grunt-qunit-sonar'
+    - 'bower'
+
+- name: add nvm to teamcity profile
+  sudo_user: teamcity
+  lineinfile: insertafter=EOF dest=/home/teamcity/.profile line='[[ -s "$HOME/.nvm/nvm.sh" ]]       && . "$HOME/.nvm/nvm.sh"'
+
+- name: add nvm to profile
+  lineinfile: insertafter=EOF dest=/etc/profile line='[[ -s "$HOME/.nvm/nvm.sh" ]]       && . "$HOME/.nvm/nvm.sh"'
+### END NVM

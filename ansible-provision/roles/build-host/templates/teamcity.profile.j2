@@ -1,0 +1,15 @@
+#!/bin/bash -e
+export _JAVA_OPTS="-Dproxyset=true -Dhttp.proxyHost={{proxy.host}} -Dhttp.proxyPort={{proxy.port}} -Dhttps.proxyHost={{proxy.host}} -Dhttps.proxyPort={{proxy.port}} -Dhttp.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|172.16.1.165|nexus.map.mandiant.com -Dhttps.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}} -Djavax.net.ssl.trustStore=/home/teamcity/.m2/keystore.pks -Djavax.net.ssl.trustStorePassword={{keystore.pass}} -Dcom.sun.net.ssl.checkRevocation=false"
+export MAVEN_OPTS="-Xmx512m -Djavax.net.ssl.trustStore=/home/teamcity/.m2/keystore.pks -Djavax.net.ssl.trustStorePassword=changeit -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dproxyset=true -Dhttp.proxyHost={{proxy.host}} -Dhttp.proxyPort={{proxy.port}}-Dhttps.proxyHost={{proxy.host}} -Dhttps.proxyPort={{proxy.port}} -Dhttp.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}} -Dhttps.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}}  -Dcom.sun.net.ssl.checkRevocation=false"
+export SBT_OPTS="-Dsbt.log.noformat=true -Xms512M -Xmx4096M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M -XX:+UseParNewGC -XX:+CMSParallelRemarkEnabled -XX:+UseConcMarkSweepGC -Djava.library.path=/usr/local/lib -Dproxyset=true -Dhttp.proxyHost={{proxy.host}} -Dhttp.proxyPort={{proxy.port}} -Dhttps.proxyHost={{proxy.host}} -Dhttps.proxyPort={{proxy.port}} -Dhttps.nonProxyHosts={{nexus.host}} -Dhttp.nonProxyHosts={{nexus.host}} -Dcom.sun.net.ssl.checkRevocation=false -Djavax.net.ssl.trustStore=/home/teamcity/.m2/keystore.pks -Djavax.net.ssl.trustStorePassword={{keystore.pass}}"
+export no_proxy="localhost,127.0.0.1,169.254.169.254,{{teamcity.local_ip}},{{nexus.host}}"
+export JAVA_HOME="/usr/lib/jvm/java-7-openjdk-amd64/"
+export http_proxy="http://{{proxy.host}}:{{proxy.port}}"
+export https_proxy="http://{{proxy.host}}:{{proxy.port}}"
+export ftp_proxy="http://{{proxy.host}}:{{proxy.port}}"
+
+# teamcity build agent
+export TEAMCITY_AGENT_PATH="/home/teamcity/buildAgent"
+export TEAMCITY_AGENT_MEM_OPTS="-server -d64 -XX:+UseG1GC -XX:+UseCompressedOops -XX:+UseFastAccessorMethods -XX:+AggressiveOpts -XX:+TieredCompilation -Djava.security.egd=file:/dev/urandom -XX:MaxGCPauseMillis=20 -XX:+UseBiasedLocking -XX:+UseNUMA"
+export TEAMCITY_AGENT_OPTS="-Dproxyset=true -Dhttp.proxyHost={{proxy.host}} -Dhttp.proxyPort={{proxy.port}} -Dhttps.proxyHost={{proxy.host}} -Dhttps.proxyPort={{proxy.port}} -Dhttp.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}} -Dhttps.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}}"
+export TEAMCITY_LAUNCHER_OPTS="-Dproxyset=true -Dhttp.proxyHost={{proxy.host}} -Dhttp.proxyPort={{proxy.port}} -Dhttps.proxyHost={{proxy.host}} -Dhttps.proxyPort={{proxy.port}} -Dhttp.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}} -Dhttps.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|{{teamcity.local_ip}}|{{nexus.host}}"

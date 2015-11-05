@@ -1,0 +1,53 @@
+{
+  "variables": {
+    "aws_access_key": "{{env `aws_access_key`}}",
+    "aws_secret_key": "{{ env `aws_secret_key` }}",
+    "aws_vpc_id": "{{ env `aws_vpc_id` }}",
+    "subnet_id": "{{ env `subnet_id` }}",
+    "user": "{{ env `USER` }}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{ user `aws_access_key` }}",
+    "secret_key": "{{ user `aws_secret_key` }}",
+    "region": "us-west-2",
+    "source_ami": "ami-b4f51687",
+    "instance_type": "t2.micro",
+    "ssh_username": "ubuntu",
+    "ami_name": "TeamCity-BuildAgent",
+    "associate_public_ip_address": "true",
+    "force_deregister": "true",
+    "vpc_id": "{{ user `aws_vpc_id` }}",
+    "subnet_id": "{{ user `subnet_id` }}",
+    "ami_description": "TeamCity Build Host",
+    "ami_regions": ["us-west-2"],
+    "launch_block_device_mappings": [
+      {
+        "device_name": "/dev/sda1",
+        "volume_type": "gp2",
+        "volume_size": "50",
+        "delete_on_termination": "true"
+    }],
+    "tags": {
+      "Name": "TeamCity BuildAgent",
+      "Created_Date": "{{ isotime \"2006-01-02\" }}",
+      "Created_By": "{{ user `user` }}"
+    }
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sleep 30",
+      "sudo apt-get update",
+      "sudo apt-get install -y python-pip python-dev python-crypto",
+      "sudo pip install -U pip",
+      "sudo pip install -q ansible==1.9.4"
+    ]
+  }, {
+    "type": "ansible-local",
+    "playbook_dir": "ansible-provision",
+    "playbook_file": "ansible-provision/build_host.yml",
+    "inventory_file": "ansible-provision/hosts",
+    "extra_arguments": ["-vv"]
+  }]
+}

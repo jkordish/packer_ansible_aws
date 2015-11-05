@@ -1,0 +1,14 @@
+- name: m2 directory
+  sudo_user: teamcity
+  file: state=directory force=yes path=~teamcity/.m2
+
+- name: maven keystore
+  sudo_user: teamcity
+  copy: src=keystore.pks dest=~teamcity/.m2/keystore.pks mode=0440 backup=yes
+
+- name: template teamcity profile
+  template: src=teamcity.profile.j2 dest=/etc/profile.d/teamcity mode=0664
+
+- name: maven proxy
+  sudo_user: teamcity
+  template: src=m2_settings.xml.j2 dest=~teamcity/.m2/settings.xml mode=0666

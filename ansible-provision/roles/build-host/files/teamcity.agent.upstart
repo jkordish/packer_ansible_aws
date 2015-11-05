@@ -1,0 +1,20 @@
+# teamcity build agent
+
+description "teamcity build agent"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+console log
+limit nofile 65535 65535
+
+pre-start script
+    . /etc/profile.d/teamcity
+    . /etc/profile.d/creds
+    ansible-playbook -vv /home/teamcity/teamcity_install.yml
+end script
+
+script
+  . /etc/profile.d/teamcity
+  cd ${TEAMCITY_AGENT_PATH}
+  sudo -u teamcity -- bash -l -c "source /etc/profile.d/teamcity && source /home/teamcity/.bashrc && ${TEAMCITY_AGENT_PATH}/bin/agent.sh start"
+end script

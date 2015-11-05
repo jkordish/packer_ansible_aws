@@ -1,0 +1,10 @@
+### MongoDB
+- name: add 10g apt-key
+  apt_key: keyserver=keyserver.ubuntu.com id=7F0CEB10
+
+- name: add 10g mongodb repo
+  apt_repository: repo='deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' state=present
+
+- name: install mongodb-org package
+  apt: name=mongodb-org state=latest
+### END MongoDB

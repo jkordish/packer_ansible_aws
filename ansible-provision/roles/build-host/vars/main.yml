@@ -1,0 +1,26 @@
+---
+# for internal npm registry
+npm:
+  auth:
+  email:
+  registry:
+# for internal nexus repository
+nexus:
+  host:
+  ip:
+  user:
+  pass:
+# for internal github server
+github:
+  host:
+  ip:
+teamcity:
+  local_ip:
+  public_ip:
+proxy:
+  host:
+  port:
+keystore:
+  pass:
+teamcity:
+  pub_key:

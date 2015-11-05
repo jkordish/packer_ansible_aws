@@ -1,0 +1,15 @@
+### sbt
+- name: get sbt
+  get_url: url=http://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.5/sbt-launch.jar dest=/usr/bin/
+
+- name: sbt wrapper
+  template: src=sbt.j2 dest=/usr/bin/sbt mode=0755
+
+- name: create .sbt directory
+  sudo_user: teamcity
+  file: state=directory path=~teamcity/.sbt/
+
+- name: scala creds for nexus
+  sudo_user: teamcity
+  template: src=scala-credentials.j2 dest=/home/teamcity/.sbt/.credentials  mode=0640
+### END sbt

@@ -1,0 +1,15 @@
+# POSTGRES
+- name: manage postgres apt key
+  apt_key: id=ACCC4CF8 url=https://www.postgresql.org/media/keys/ACCC4CF8.asc state=present
+
+- name: manage postgres apt repo
+  apt_repository: repo='deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main'
+
+- name: manage postgres server for unit tests
+  apt: pkg=postgresql-9.4 state=latest install_recommends=yes force=yes
+
+- name: manage teamcity postgres super user
+  sudo_user: postgres
+  shell: createuser teamcity -s
+  ignore_errors: yes
+# END POSTGRES

@@ -1,0 +1,33 @@
+### GVM
+- name: install gvm wrapper
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ curl -sSL https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer | /bin/bash"
+  ignore_errors: yes
+
+- name: install go versions {{gvm}}
+  sudo_user: teamcity
+  shell: "executable=/bin/bash chdir=~ source .gvm/scripts/gvm && gvm install {{item}} --binary"
+  with_items: gvm
+
+- name: install gom
+  sudo_user: teamcity
+  shell: "executable=/bin/bash source $HOME/.gvm/scripts/gvm && gvm use {{item}} && go get github.com/mattn/gom"
+  with_items: gvm
+
+- name: install godep
+  sudo_user: teamcity
+  shell: "executable=/bin/bash source $HOME/.gvm/scripts/gvm && gvm use {{item}} && go get github.com/tools/godep"
+  with_items: gvm
+
+- name: make {{gvm[0]}} default
+  sudo_user: teamcity
+  shell: "executable=/bin/bash source $HOME/.gvm/scripts/gvm && gvm use {{gvm[0]}}  --default"
+
+- name: add gvm to teamcity profile
+  sudo_user: teamcity
+  lineinfile: insertafter=EOF dest=/home/teamcity/.profile line='[[ -s "$HOME/.gvm/scripts/gvm" ]]  && . "$HOME/.gvm/scripts/gvm"'
+
+- name: add gvm to profile
+  lineinfile: insertafter=EOF dest=/etc/profile line='[[ -s "$HOME/.gvm/scripts/gvm" ]]  && . "$HOME/.gvm/scripts/gvm"'
+
+### END GVM
